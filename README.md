@@ -76,6 +76,8 @@ Key capabilities include:
 
 ### 2. PostgreSQL Installation & Database Setup
 
+> 💡 **Note**: Your local database is already created and seeded! This setup section is provided for evaluators or developers setting up the project from scratch on a new machine.
+
 #### Windows Installation:
 1. Download the installer from the [PostgreSQL Official Downloads](https://www.postgresql.org/download/windows/).
 2. Follow the setup wizard and note the password entered for the `postgres` superuser.
