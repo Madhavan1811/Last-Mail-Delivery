@@ -70,11 +70,46 @@ Key capabilities include:
 ### 1. Prerequisites
 - **Node.js**: ≥ 18.x
 - **npm**: ≥ 9.x
+- **PostgreSQL**: ≥ 14.x (Installed and running locally on default port `5432`)
 
-### 2. Clone & Install Dependencies
+---
+
+### 2. PostgreSQL Installation & Database Setup
+
+#### Windows Installation:
+1. Download the installer from the [PostgreSQL Official Downloads](https://www.postgresql.org/download/windows/).
+2. Follow the setup wizard and note the password entered for the `postgres` superuser.
+3. Open **SQL Shell (psql)** or Command Prompt to create the database:
+   ```sql
+   CREATE DATABASE delivery_tracker;
+   ```
+4. Run the database migration script (schema + seed data):
+   ```bash
+   psql -U postgres -d delivery_tracker -f server/migrations/001_schema.sql
+   ```
+
+#### macOS (Homebrew):
+```bash
+brew install postgresql@14
+brew services start postgresql@14
+createdb delivery_tracker
+psql -d delivery_tracker -f server/migrations/001_schema.sql
+```
+
+#### Linux (Ubuntu / Debian):
+```bash
+sudo apt update && sudo apt install postgresql postgresql-contrib -y
+sudo systemctl start postgresql
+sudo -u postgres psql -c "CREATE DATABASE delivery_tracker;"
+psql -U postgres -d delivery_tracker -f server/migrations/001_schema.sql
+```
+
+---
+
+### 3. Clone & Install Dependencies
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/Madhavan1811/Last-Mail-Delivery.git
 cd delivery-tracker
 
 # Install dependencies for both server and client
@@ -83,7 +118,7 @@ cd ../client && npm install
 cd ..
 ```
 
-### 3. Environment Configuration
+### 4. Environment Configuration
 Create a `.env` file inside the `server/` directory:
 ```env
 PORT=3000
@@ -93,7 +128,7 @@ EMAIL_USER=demo@delivery.com
 EMAIL_PASS=demo_password
 ```
 
-### 4. Start the Application
+### 5. Start the Application
 From the root project directory, run:
 ```bash
 npm run dev
