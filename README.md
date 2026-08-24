@@ -1,5 +1,9 @@
 # Last-Mile Delivery Management & Control Tower Platform
 
+> 📦 **Source Code** is available as a zip file: [`delivery-tracker-source.zip`](./delivery-tracker-source.zip)
+> 🌐 **Live Hosted Application**: [https://last-mail-delivery.vercel.app](https://last-mail-delivery.vercel.app)
+> 📄 **System Design Write-up**: [`SYSTEM_DESIGN.md`](./SYSTEM_DESIGN.md)
+
 A modern, full-stack last-mile logistics and delivery tracking platform designed to provide real-time visibility across customers, delivery agents, and logistics administrators.
 
 ---
@@ -184,3 +188,42 @@ For testing and demonstration, use the following pre-configured accounts:
 - `GET, POST /api/admin/zones` — Manage logistics zones.
 - `GET, POST /api/admin/rate-cards` — Configure pricing rate cards.
 - `GET /api/admin/agents` — View agent fleet status & toggle availability.
+
+---
+
+## Database Schema Details
+
+The platform uses a PostgreSQL schema (`server/migrations/001_schema.sql`) engineered for logistics accounting and audit compliance:
+
+- **`users`**: Stores authentication profiles with role constraints (`customer`, `agent`, `admin`).
+- **`zones`**: Logistics territory definitions (e.g., North Zone, South Zone).
+- **`zone_areas`**: Maps individual 6-digit pincodes to logistics zones with `UNIQUE` constraints.
+- **`rate_cards`**: Maps `(order_type [B2B/B2C], zone_relation [intra/inter])` to `base_price` and `rate_per_kg`.
+- **`cod_surcharge_config`**: Stores fixed surcharge amounts for Cash-on-Delivery payment options per customer tier.
+- **`agents`**: Links user accounts to primary delivery zones and availability flags (`is_available`).
+- **`orders`**: Central ledger storing dimensions, calculated volumetric vs actual weights, billable weight, address info, cost breakdowns (`JSONB`), and current delivery status.
+- **`order_status_log`**: Immutable audit table protected by PostgreSQL rules (`INSTEAD NOTHING` on `UPDATE`/`DELETE`) to log state transitions with actor IDs and notes.
+- **`reschedule_requests`**: Stores customer-initiated redelivery requests following failed attempts.
+
+---
+
+## Dynamic Rate Calculation Engine Logic
+
+The rate engine (`server/services/rateEngine.js`) executes a 6-step calculation pipeline:
+
+1. **Volumetric Weight Calculation**:
+   $$\text{Volumetric Weight (kg)} = \frac{\text{Length (cm)} \times \text{Breadth (cm)} \times \text{Height (cm)}}{5000}$$
+2. **Billable Weight Determination**:
+   $$\text{Billable Weight} = \max(\text{Actual Weight}, \text{Volumetric Weight})$$
+3. **Zone Relation Resolution**:
+   - Queries `zone_areas` for `pickup_pincode` and `drop_pincode`.
+   - If `pickup_zone_id == drop_zone_id` $\rightarrow$ **`intra`** (Intra-Zone).
+   - If `pickup_zone_id != drop_zone_id` $\rightarrow$ **`inter`** (Inter-Zone).
+4. **Rate Card Lookup**:
+   Matches `(order_type, zone_relation)` to retrieve `base_price` and `rate_per_kg`.
+5. **Base Shipping Cost**:
+   $$\text{Shipping Cost} = \text{base\_price} + (\text{Billable Weight} \times \text{rate\_per\_kg})$$
+6. **Payment Surcharge & Total**:
+   - If `payment_type == 'COD'`, queries `cod_surcharge_config` for surcharge.
+   $$\text{Total Charge} = \text{Shipping Cost} + \text{COD Surcharge}$$
+
