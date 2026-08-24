@@ -5,6 +5,9 @@ const path    = require('path');
 
 const app = express();
 
+// Trust reverse proxy (required for Vercel/Render HTTPS session cookies)
+app.set('trust proxy', 1);
+
 // ---------------------------------------------------------------
 // Body parsing
 // ---------------------------------------------------------------
